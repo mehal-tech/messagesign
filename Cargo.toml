@@ -10,7 +10,7 @@ repository = "https://github.com/mehal-tech/messagesign"
 homepage = "https://github.com/mehal-tech/messagesign"
 readme = "README.md"
 documentation = "https://docs.rs/messagesign"
-keywords = ["s3", "aws", "authentication", "signature", "web"]
+keywords = ["brog", "mehal", "authentication", "signature", "web"]
 categories = [
     "authentication",
     "web-programming",
