@@ -1,0 +1,31 @@
+[package]
+name = "messagesign"
+version = "1.0.0"
+edition = "2021"
+authors = ["Anton Whalley <anton@mehal.tech>"]
+license = "MIT"
+rust-version = "1.60"
+description = "Library for signing requests to mehal services"
+repository = "https://github.com/mehal-tech/messagesign"
+homepage = "https://github.com/mehal-tech/messagesign"
+readme = "README.md"
+documentation = "https://docs.rs/messagesign"
+keywords = ["s3", "aws", "authentication", "signature", "web"]
+categories = [
+    "authentication",
+    "web-programming",
+    "web-programming::http-client",
+]
+
+[dependencies]
+chrono = "0.4"
+hmac = "0.12"
+sha2 = "0.10"
+url = "2.2"
+urlencoding = "2.1"
+hex = "0.4"
+error-chain = "0.12"
+
+[dev-dependencies]
+ureq = "2.4"
+chrono = "0.4"
