@@ -48,7 +48,7 @@
 use chrono::{DateTime, Utc};
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, str};
 use url::Url;
 use urlencoding::encode as url_encode;
 
@@ -246,6 +246,7 @@ pub fn signature(
     service: &str,
     machineid: &str,
     payload_hash: &str,
+    nonce: &str,
 ) -> Result<Signature> {
     const LONG_DATE_TIME: &str = "%Y%m%dT%H%M%SZ";
     let host_port = url
@@ -266,7 +267,7 @@ pub fn signature(
     let date_time = Utc::now();
     let date_time_string = date_time.format(LONG_DATE_TIME).to_string();
     headers.insert("x-mhl-date".to_string(), date_time_string.clone());
-
+    headers.insert("x-mhl-nonce".to_string(), nonce.to_string());
     headers.insert("x-mhl-mid".to_string(), machineid.to_string());
 
     let signature = verification(
