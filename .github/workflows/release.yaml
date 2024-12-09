@@ -39,7 +39,7 @@ jobs:
   # https://github.com/marketplace/actions/changelog-reader
   release:
     name: post / github release
-    # needs: publish
+    needs: publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
