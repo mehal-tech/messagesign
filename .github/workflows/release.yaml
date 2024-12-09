@@ -17,7 +17,7 @@ on:
 jobs:
   # call out to build.yml
   doing-a-build:
-    uses: cargo-generate/cargo-generate/.github/workflows/build.yml@main
+    uses: mehal-tech/messagesign/.github/workflows/build-test.yaml@main
     secrets: inherit
 # keeping around as we might want to publish later
   publish:
