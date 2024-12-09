@@ -1,0 +1,6 @@
+[files]
+extend-exclude = ["CHANGELOG.md"]
+
+[default.extend-words]
+fo = "fo"
+clos = "clos"
