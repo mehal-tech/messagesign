@@ -10,6 +10,8 @@ The implementation is based on the [s3v4](https://github.com/uv-rust/s3v4) libra
  converted to a `String` or accessed through the `description` method or `display_chain` 
  and `backtrace` methods in case a full backtrace is needed.
 
+[![Build](https://github.com/mehal-tech/messagesign/actions/workflows/build-test.yaml/badge.svg)](https://github.com/mehal-tech/messagesign/actions/workflows/build-test.yaml)
+
  # Examples
  
  ## Signing a request
