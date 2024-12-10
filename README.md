@@ -16,15 +16,17 @@ The implementation is based on the [s3v4](https://github.com/uv-rust/s3v4) libra
  
  ## Signing a request
  ```rust
-    let signature: s3v4::Signature = s3v4::signature(
-        url,
-        method,
-        &access,
-        &secret,
-        &region,
+    let url = url::Url::parse("https://mehal.tech/endpoint").unwrap();
+    let signature: messagesign::Signature = messagesign::signature(
+        &url, // The endpoint of the mehel services
+        "GET",   // The http Method  
+        "ivegotthekey",  // the access key provided with your secret
+        "ivegotthesecret", // The secret provided for your project
+        "global", // A supported region See mehal.tech docs
         &"brog",
-        machineid
+        "machineid", // The data in /etc/machine-id
         "UNSIGNED-PAYLOAD", //payload hash, or "UNSIGNED-PAYLOAD"
+        "", // An empty string or a random u32
     ).map_err(|err| format!("Signature error: {}", err.display_chain()))?;
 ``` 
  
