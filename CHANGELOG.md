@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Workflow permissions
+- Give `write-all` permissions to the Github Release Step
 
 ## [4.0.1] - 2025-02-22
 
