@@ -15,6 +15,7 @@ on:
 
 # NOTE: needs to stay in sync with ./build.yml
 jobs:
+  
   # call out to build.yml
   doing-a-build:
     uses: mehal-tech/messagesign/.github/workflows/build-test.yaml@main
@@ -39,6 +40,7 @@ jobs:
   # https://github.com/marketplace/actions/changelog-reader
   release:
     name: post / github release
+    permissions: write-all
     needs: publish
     runs-on: ubuntu-latest
     steps:
