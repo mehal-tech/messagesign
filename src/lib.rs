@@ -156,15 +156,20 @@ fn scope_string(date_time: &DateTime<Utc>, region: &str, service: &str) -> Strin
 // -----------------------------------------------------------------------------
 /// Generate the "string to sign" - the value to which the HMAC signing is
 /// applied to sign requests.
-fn string_to_sign(date_time: &DateTime<Utc>, region: &str, canonical_req: &str) -> String {
+fn string_to_sign(
+    date_time: &DateTime<Utc>,
+    region: &str,
+    canonical_req: &str,
+    service: &str,
+) -> String {
     //println!("{}", service);
-    let lservice = "brog/gitops_request";
+
     let mut hasher = Sha256::default();
     hasher.update(canonical_req.as_bytes());
     let string_to = format!(
         "MHL4-HMAC-SHA256\n{timestamp}\n{scope}\n{hash}",
         timestamp = date_time.format(LONG_DATETIME_FMT),
-        scope = scope_string(date_time, region, lservice),
+        scope = scope_string(date_time, region, service),
         hash = hex::encode(hasher.finalize().as_slice())
     );
     string_to
@@ -230,7 +235,7 @@ pub fn verification(
     let url = Url::parse(url_string).chain_err(|| "error parsing url")?;
     let canonical = canonical_request(&method.to_uppercase(), &url, headers, payload_hash);
 
-    let string_to_sign = string_to_sign(date_time, region, &canonical);
+    let string_to_sign = string_to_sign(date_time, region, &canonical, service);
     let signing_key = signing_key(date_time, secret, region, service)?;
     let mut hmac =
         Hmac::<Sha256>::new_from_slice(&signing_key).chain_err(|| "error hashing signing key")?;
@@ -311,7 +316,7 @@ mod tests {
     #[test]
     fn test_signature() -> Result<()> {
         const EXPECTED_SIGNATURE: &str =
-            "c0cc110abe9ace556024b35da8abd9aa1d00dea5a468df7f438e7cf0d22b2f93";
+            "ef3abe3ccf173e7e6374faf6ae74fba2149e29343bc635e976c4e9a47d534c92";
         let url = "https://mehal.tech";
         let method = "GET";
         let payload_hash = "UNSIGNED-PAYLOAD";
