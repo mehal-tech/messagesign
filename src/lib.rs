@@ -66,6 +66,7 @@ const SHORT_DATE_FMT: &str = "%Y%m%d";
 #[macro_use]
 extern crate error_chain;
 
+#[allow(unexpected_cfgs)]
 mod errors {
     error_chain! {}
 }
@@ -143,11 +144,12 @@ fn canonical_request(
 
 // -----------------------------------------------------------------------------
 /// Generate a scope string.
-fn scope_string(date_time: &DateTime<Utc>, region: &str) -> String {
+fn scope_string(date_time: &DateTime<Utc>, region: &str, service: &str) -> String {
     format!(
-        "{date}/{region}/brog/gitops_request",
+        "{date}/{region}/{service}",
         date = date_time.format(SHORT_DATE_FMT),
-        region = region
+        region = region,
+        service = service
     )
 }
 
@@ -155,12 +157,14 @@ fn scope_string(date_time: &DateTime<Utc>, region: &str) -> String {
 /// Generate the "string to sign" - the value to which the HMAC signing is
 /// applied to sign requests.
 fn string_to_sign(date_time: &DateTime<Utc>, region: &str, canonical_req: &str) -> String {
+    //println!("{}", service);
+    let lservice = "brog/gitops_request";
     let mut hasher = Sha256::default();
     hasher.update(canonical_req.as_bytes());
     let string_to = format!(
         "MHL4-HMAC-SHA256\n{timestamp}\n{scope}\n{hash}",
         timestamp = date_time.format(LONG_DATETIME_FMT),
-        scope = scope_string(date_time, region),
+        scope = scope_string(date_time, region, lservice),
         hash = hex::encode(hasher.finalize().as_slice())
     );
     string_to
@@ -199,12 +203,13 @@ fn authorization_header(
     region: &str,
     signed_headers: &str,
     signature: &str,
+    service: &str,
 ) -> String {
     format!(
         "MHL-HMAC-SHA256 Credential={access_key}/{scope},\
             SignedHeaders={signed_headers},Signature={signature}",
         access_key = access_key,
-        scope = scope_string(date_time, region),
+        scope = scope_string(date_time, region, service),
         signed_headers = signed_headers,
         signature = signature
     )
@@ -290,6 +295,7 @@ pub fn signature(
         region,
         &signed_header_string(&headers),
         &signature,
+        service,
     );
     Ok(Signature {
         auth_header: auth,
