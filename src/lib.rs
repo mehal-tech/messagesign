@@ -66,6 +66,7 @@ const SHORT_DATE_FMT: &str = "%Y%m%d";
 #[macro_use]
 extern crate error_chain;
 
+#[allow(unexpected_cfgs)]
 mod errors {
     error_chain! {}
 }
