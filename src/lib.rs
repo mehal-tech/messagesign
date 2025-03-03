@@ -20,6 +20,7 @@
 //!        "ivegotthesecret", // The secret provided for your project
 //!        "global", // A supported region See mehal.tech docs
 //!        &"brog",
+//!        "hostname", // the name of the machine  
 //!        "machineid", // The data in /etc/machine-id
 //!        "UNSIGNED-PAYLOAD", //payload hash, or "UNSIGNED-PAYLOAD"
 //!        "", // An empty string or a random u32
@@ -36,6 +37,7 @@
 //!        .header("x-mhl-content-sha256", "UNSIGNED-PAYLOAD")
 //!        .header("x-mhl-date", &signature.date_time)
 //!        .header("x-mhl-mid", &machineid)
+//!        .header("x-mhl-hostname", &hostname)
 //!        .header("authorization", &signature.auth_header)
 //! ```
 //! #### Ureq
@@ -46,6 +48,7 @@
 //!        .set("x-mhl-content-sha256", "UNSIGNED-PAYLOAD")
 //!        .set("x-mhl-date", &signature.date_time)
 //!        .set("x-mhl-mid", &machineid)
+//!        .set("x-mhl-hostname", &hostname)
 //!        .set("authorization", &signature.auth_header)
 //!
 
@@ -259,6 +262,7 @@ pub fn signature(
     region: &str,
     service: &str,
     machineid: &str,
+    hostname: &str,
     payload_hash: &str,
     nonce: &str,
 ) -> Result<Signature> {
@@ -280,6 +284,7 @@ pub fn signature(
     headers.insert("x-mhl-content-sha256".to_string(), payload_hash.to_string());
     let date_time = Utc::now();
     let date_time_string = date_time.format(LONG_DATE_TIME).to_string();
+    headers.insert("x-mhl-hostname".to_string(), hostname.to_string());
     headers.insert("x-mhl-date".to_string(), date_time_string.clone());
     headers.insert("x-mhl-nonce".to_string(), nonce.to_string());
     headers.insert("x-mhl-mid".to_string(), machineid.to_string());
@@ -311,10 +316,69 @@ pub fn signature(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{TimeZone, Utc};
+    use chrono::{NaiveDateTime, TimeZone, Utc};
 
     #[test]
     fn test_signature() -> Result<()> {
+        let method = "GET";
+        let payload_hash = "UNSIGNED-PAYLOAD";
+        let region = "global";
+        let service = "test";
+        let url = url::Url::parse("https://ubifaq.com/endpoint").unwrap();
+        let secret = "ivegotthesecret";
+        let nonce = "1234567";
+        let machineid = "mid";
+        let hostname = "hostname";
+
+        let sig = signature(
+            &url,
+            method,
+            "ivegotthekey",
+            secret,
+            region,
+            service,
+            machineid,
+            hostname,
+            payload_hash,
+            nonce,
+        )
+        .unwrap();
+
+        let fixdate =
+            NaiveDateTime::parse_from_str(sig.date_time.as_str(), "%Y%m%dT%H%M%SZ").unwrap();
+        let parsedate = DateTime::<Utc>::from_naive_utc_and_offset(fixdate, Utc);
+
+        println!("parsed   {}", parsedate);
+        println!("sig date {}", &sig.date_time);
+
+        let mut headers = HeadersMap::new();
+        headers.insert("host".to_string(), "ubifaq.com".to_string());
+        headers.insert("x-mhl-content-sha256".to_string(), payload_hash.to_string());
+        headers.insert("x-mhl-date".to_string(), sig.date_time);
+        headers.insert("x-mhl-nonce".to_string(), nonce.to_string());
+        headers.insert("x-mhl-mid".to_string(), machineid.to_string());
+        headers.insert("x-mhl-hostname".to_string(), hostname.to_string());
+
+        let verification = verification(
+            method,
+            payload_hash,
+            url.as_str(),
+            &headers,
+            &parsedate,
+            secret,
+            region,
+            service,
+        )?;
+
+        println!("auth header{}", sig.auth_header);
+        println!("verified sig{}", verification.as_str());
+
+        assert!(sig.auth_header.to_string().contains(verification.as_str()));
+
+        Ok(())
+    }
+    #[test]
+    fn test_verification() -> Result<()> {
         const EXPECTED_SIGNATURE: &str =
             "ef3abe3ccf173e7e6374faf6ae74fba2149e29343bc635e976c4e9a47d534c92";
         let url = "https://mehal.tech";
