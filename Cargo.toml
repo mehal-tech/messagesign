@@ -1,6 +1,6 @@
 [package]
 name = "messagesign"
-version = "6.0.0"
+version = "7.0.0"
 edition = "2021"
 authors = ["Anton Whalley <anton@mehal.tech>"]
 license = "MIT"
@@ -25,7 +25,7 @@ url = "2.2"
 urlencoding = "2.1"
 hex = "0.4"
 error-chain = "0.12"
-
+base64 = "0.22.1"
 [dev-dependencies]
 ureq = "2.4"
 chrono = "0.4"
