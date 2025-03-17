@@ -34,7 +34,7 @@
 //! ```ignore
 //!    let req = Request::builder()
 //!        .method(Method::GET)
-//!        .header("x-mhl-content-sha512", "UNSIGNED-PAYLOAD")
+//!        .header("x-mhl-content-sha256", "UNSIGNED-PAYLOAD")
 //!        .header("x-mhl-date", &signature.date_time)
 //!        .header("x-mhl-mid", &machineid)
 //!        .header("x-mhl-hostname", &hostname)
@@ -45,7 +45,7 @@
 //!    let agent = AgentBuilder::new().build();
 //!    let response = agent
 //!        .put(&uri)
-//!        .set("x-mhl-content-sha512", "UNSIGNED-PAYLOAD")
+//!        .set("x-mhl-content-sha256", "UNSIGNED-PAYLOAD")
 //!        .set("x-mhl-date", &signature.date_time)
 //!        .set("x-mhl-mid", &machineid)
 //!        .set("x-mhl-hostname", &hostname)
@@ -54,14 +54,14 @@
 
 use chrono::{DateTime, Utc};
 use hmac::{Hmac, Mac};
-use sha2::{Digest, Sha512};
+use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, str};
 use url::Url;
 use urlencoding::encode as url_encode;
 
 type HeadersMap = BTreeMap<String, String>;
 
-type HmacSha512 = Hmac<Sha512>;
+type HmacSha256 = Hmac<Sha256>;
 
 const LONG_DATETIME_FMT: &str = "%Y%m%dT%H%M%SZ";
 const SHORT_DATE_FMT: &str = "%Y%m%d";
@@ -132,16 +132,16 @@ fn canonical_request(
     method: &str,
     url: &Url,
     headers: &HeadersMap,
-    payload_sha512: &str,
+    payload_sha256: &str,
 ) -> String {
     format!(
-        "{method}\n{uri}\n{query_string}\n{headers}\n\n{signed}\n{sha512}",
+        "{method}\n{uri}\n{query_string}\n{headers}\n\n{signed}\n{sha256}",
         method = method,
         uri = url.path().to_ascii_lowercase(),
         query_string = canonical_query_string(url),
         headers = canonical_header_string(headers),
         signed = signed_header_string(headers),
-        sha512 = payload_sha512
+        sha256 = payload_sha256
     )
 }
 
@@ -167,10 +167,10 @@ fn string_to_sign(
 ) -> String {
     //println!("{}", service);
 
-    let mut hasher = Sha512::default();
+    let mut hasher = Sha256::default();
     hasher.update(canonical_req.as_bytes());
     let string_to = format!(
-        "MHL4-HMAC-SHA512\n{timestamp}\n{scope}\n{hash}",
+        "MHL4-HMAC-SHA256\n{timestamp}\n{scope}\n{hash}",
         timestamp = date_time.format(LONG_DATETIME_FMT),
         scope = scope_string(date_time, region, service),
         hash = hex::encode(hasher.finalize().as_slice())
@@ -189,15 +189,15 @@ fn signing_key(
 ) -> Result<Vec<u8>> {
     let secret = format!("MHL{}", secret_key);
     let mut date_hmac =
-        HmacSha512::new_from_slice(secret.as_bytes()).chain_err(|| "error hashing secret")?;
+        HmacSha256::new_from_slice(secret.as_bytes()).chain_err(|| "error hashing secret")?;
     date_hmac.update(date_time.format(SHORT_DATE_FMT).to_string().as_bytes());
-    let mut region_hmac = HmacSha512::new_from_slice(&date_hmac.finalize().into_bytes())
+    let mut region_hmac = HmacSha256::new_from_slice(&date_hmac.finalize().into_bytes())
         .chain_err(|| "error hashing date")?;
     region_hmac.update(region.to_string().as_bytes());
-    let mut service_hmac = HmacSha512::new_from_slice(&region_hmac.finalize().into_bytes())
+    let mut service_hmac = HmacSha256::new_from_slice(&region_hmac.finalize().into_bytes())
         .chain_err(|| "error hashing region")?;
     service_hmac.update(service.as_bytes());
-    let mut signing_hmac = HmacSha512::new_from_slice(&service_hmac.finalize().into_bytes())
+    let mut signing_hmac = HmacSha256::new_from_slice(&service_hmac.finalize().into_bytes())
         .chain_err(|| "error hashing service")?;
     signing_hmac.update(b"mhl_request");
     Ok(signing_hmac.finalize().into_bytes().to_vec())
@@ -214,7 +214,7 @@ fn authorization_header(
     service: &str,
 ) -> String {
     format!(
-        "MHL-HMAC-SHA512 Credential={access_key}/{scope},\
+        "MHL-HMAC-SHA256 Credential={access_key}/{scope},\
             SignedHeaders={signed_headers},Signature={signature}",
         access_key = access_key,
         scope = scope_string(date_time, region, service),
@@ -241,7 +241,7 @@ pub fn verification(
     let string_to_sign = string_to_sign(date_time, region, &canonical, service);
     let signing_key = signing_key(date_time, secret, region, service)?;
     let mut hmac =
-        Hmac::<Sha512>::new_from_slice(&signing_key).chain_err(|| "error hashing signing key")?;
+        Hmac::<Sha256>::new_from_slice(&signing_key).chain_err(|| "error hashing signing key")?;
     hmac.update(string_to_sign.as_bytes());
     Ok(hex::encode(hmac.finalize().into_bytes()))
 }
@@ -281,7 +281,7 @@ pub fn signature(
 
     headers.insert("host".to_string(), host_port);
 
-    headers.insert("x-mhl-content-sha512".to_string(), payload_hash.to_string());
+    headers.insert("x-mhl-content-sha256".to_string(), payload_hash.to_string());
     let date_time = Utc::now();
     let date_time_string = date_time.format(LONG_DATE_TIME).to_string();
     headers.insert("x-mhl-hostname".to_string(), hostname.to_string());
@@ -353,7 +353,7 @@ mod tests {
 
         let mut headers = HeadersMap::new();
         headers.insert("host".to_string(), "ubifaq.com".to_string());
-        headers.insert("x-mhl-content-sha512".to_string(), payload_hash.to_string());
+        headers.insert("x-mhl-content-sha256".to_string(), payload_hash.to_string());
         headers.insert("x-mhl-date".to_string(), sig.date_time);
         headers.insert("x-mhl-nonce".to_string(), nonce.to_string());
         headers.insert("x-mhl-mid".to_string(), machineid.to_string());
@@ -380,7 +380,7 @@ mod tests {
     #[test]
     fn test_verification() -> Result<()> {
         const EXPECTED_SIGNATURE: &str =
-            "c9759707007a88fc33c556809c933e46eb16462fb73f015d23022672a857c86449d9fc345f4495d89fc0d27d0512aabc8270833049106bfdfa9ecd22c90dd1e1";
+            "ef3abe3ccf173e7e6374faf6ae74fba2149e29343bc635e976c4e9a47d534c92";
         let url = "https://mehal.tech";
         let method = "GET";
         let payload_hash = "UNSIGNED-PAYLOAD";
@@ -390,7 +390,7 @@ mod tests {
         let service = "brog";
         let mut headers = HeadersMap::new();
         headers.insert("host".to_string(), "aws.com".to_string());
-        headers.insert("x-mhl-content-sha512".to_string(), payload_hash.to_string());
+        headers.insert("x-mhl-content-sha256".to_string(), payload_hash.to_string());
 
         let signature = verification(
             method,
