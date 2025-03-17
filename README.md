@@ -11,6 +11,8 @@ The implementation is based on the [s3v4](https://github.com/uv-rust/s3v4) libra
  and `backtrace` methods in case a full backtrace is needed.
 
 [![Build](https://github.com/mehal-tech/messagesign/actions/workflows/build-test.yaml/badge.svg)](https://github.com/mehal-tech/messagesign/actions/workflows/build-test.yaml)
+[![codecov](https://codecov.io/gh/mehal-tech/messagesign/graph/badge.svg?token=S1X67D6K6I)](https://codecov.io/gh/mehal-tech/messagesign)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10183/badge)](https://www.bestpractices.dev/projects/10183)
 
  # Examples
  
@@ -25,6 +27,7 @@ The implementation is based on the [s3v4](https://github.com/uv-rust/s3v4) libra
         "global", // A supported region See mehal.tech docs
         &"brog",
         "machineid", // The data in /etc/machine-id
+        "hostname", // The data in /etc/machine-id
         "UNSIGNED-PAYLOAD", //payload hash, or "UNSIGNED-PAYLOAD"
         "", // An empty string or a random u32
     ).map_err(|err| format!("Signature error: {}", err.display_chain()))?;
