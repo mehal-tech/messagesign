@@ -39,7 +39,7 @@ The implementation is based on the [s3v4](https://github.com/uv-rust/s3v4) libra
  ```rust
         let req = Request::builder()
         .method(Method::GET)
-        .header("x-mhl-content-sha512", "UNSIGNED-PAYLOAD")
+        .header("x-mhl-content-sha256", "UNSIGNED-PAYLOAD")
         .header("x-mhl-date", &signature.date_time)
         .header("x-mhl-mid", &machineid)
         .header("authorization", &signature.auth_header)
@@ -49,7 +49,7 @@ The implementation is based on the [s3v4](https://github.com/uv-rust/s3v4) libra
     let agent = AgentBuilder::new().build();
     let response = agent
         .put(&uri)
-        .set("x-mhl-content-sha512", "UNSIGNED-PAYLOAD")
+        .set("x-mhl-content-sha256", "UNSIGNED-PAYLOAD")
         .set("x-mhl-date", &signature.date_time)
         .set("x-mhl-mid", &machineid)
         .set("authorization", &signature.auth_header)
